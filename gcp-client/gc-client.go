@@ -12,27 +12,27 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-type GoogleCloudConfig struct {
+type Config struct {
 	PROJECT_ID                     string `default:"" envconfig:"PROJECT_ID"`
 	BUCKET_NAME                    string `default:"" envconfig:"BUCKET_NAME"`
 	GOOGLE_APPLICATION_CREDENTIALS string `default:"/etc/gcp/sa_credentials.json" envconfig:"GOOGLE_APPLICATION_CREDENTIALS"`
 }
 
-type ClientUploader struct {
+type Client struct {
 	cl         *storage.Client
 	projectID  string
 	bucketName string
 	uploadPath string
 }
 
-// Init - Returns client to upload/download files
-func Init(bucketName, projectID, uploadPath string) (*ClientUploader, error) {
+// New - new client to upload/download files
+func New(bucketName, projectID, uploadPath string) (*Client, error) {
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
-		return &ClientUploader{}, err
+		return &Client{}, err
 	}
 
-	return &ClientUploader{
+	return &Client{
 		cl:         client,
 		bucketName: bucketName,
 		projectID:  projectID,
@@ -41,37 +41,37 @@ func Init(bucketName, projectID, uploadPath string) (*ClientUploader, error) {
 }
 
 // Upload - uploads data, filename should contain filetype
-func Upload(ctx context.Context, filename string, data []byte, client *ClientUploader) error {
+func Upload(ctx context.Context, filename string, data []byte, client *Client) error {
 	return client.uploadFile(ctx, data, filename)
 }
 
 // Download - downloads data, filename should contain filetype
-func Download(ctx context.Context, filename string, client *ClientUploader) ([]byte, error) {
+func Download(ctx context.Context, filename string, client *Client) ([]byte, error) {
 	return client.downloadFile(ctx, filename)
 }
 
 // Delete - deletes data, filename should contain filetype
-func Delete(ctx context.Context, filename string, client *ClientUploader) error {
+func Delete(ctx context.Context, filename string, client *Client) error {
 	return client.deleteFile(ctx, filename)
 }
 
 // DeleteAllByPrefix - deletes all objects that matches the prefix name
-func DeleteAllByPrefix(ctx context.Context, prefix string, client *ClientUploader) error {
+func DeleteAllByPrefix(ctx context.Context, prefix string, client *Client) error {
 	return client.deleteFilesByPrefix(ctx, prefix)
 }
 
 // ListAll - retruns an iterator to list all objects that match the prefix
-func ListAllFilenames(ctx context.Context, prefix string, client *ClientUploader) ([]string, error) {
+func ListAllFilenames(ctx context.Context, prefix string, client *Client) ([]string, error) {
 	return client.listFilenames(ctx, prefix)
 }
 
 // DownloadFirstByPrefix - retruns an iterator to list all objects that match the prefix
-func DownloadFirstByPrefix(ctx context.Context, prefix string, client *ClientUploader) ([]byte, string, error) {
+func DownloadFirstByPrefix(ctx context.Context, prefix string, client *Client) ([]byte, string, error) {
 	return client.donwloadFirstFileByPrefix(ctx, prefix)
 }
 
 // uploadFile uploads an object
-func (c *ClientUploader) uploadFile(ctx context.Context, file []byte, object string) error {
+func (c *Client) uploadFile(ctx context.Context, file []byte, object string) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*50)
 	defer cancel()
 
@@ -91,7 +91,7 @@ func (c *ClientUploader) uploadFile(ctx context.Context, file []byte, object str
 }
 
 // downloadFile downloads an object
-func (c *ClientUploader) downloadFile(ctx context.Context, object string) ([]byte, error) {
+func (c *Client) downloadFile(ctx context.Context, object string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*50)
 	defer cancel()
 
@@ -110,7 +110,7 @@ func (c *ClientUploader) downloadFile(ctx context.Context, object string) ([]byt
 }
 
 // deleteFile downloads an object
-func (c *ClientUploader) deleteFile(ctx context.Context, object string) error {
+func (c *Client) deleteFile(ctx context.Context, object string) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*50)
 	defer cancel()
 
@@ -125,7 +125,7 @@ func (c *ClientUploader) deleteFile(ctx context.Context, object string) error {
 }
 
 // deleteFilesByPrefix - deletes all files that match the prefix
-func (c *ClientUploader) deleteFilesByPrefix(ctx context.Context, prefix string) error {
+func (c *Client) deleteFilesByPrefix(ctx context.Context, prefix string) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
@@ -151,7 +151,7 @@ func (c *ClientUploader) deleteFilesByPrefix(ctx context.Context, prefix string)
 }
 
 // listFilenames - returns iterator to iterate over all matching objects
-func (c *ClientUploader) listFilenames(ctx context.Context, prefix string) ([]string, error) {
+func (c *Client) listFilenames(ctx context.Context, prefix string) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
@@ -180,7 +180,7 @@ func (c *ClientUploader) listFilenames(ctx context.Context, prefix string) ([]st
 }
 
 // donwloadFirstFileByPrefix - downloads the first prefix matching file
-func (c *ClientUploader) donwloadFirstFileByPrefix(ctx context.Context, prefix string) ([]byte, string, error) {
+func (c *Client) donwloadFirstFileByPrefix(ctx context.Context, prefix string) ([]byte, string, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*50)
 	defer cancel()
 

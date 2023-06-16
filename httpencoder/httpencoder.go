@@ -16,7 +16,7 @@ type IHttpEncoder interface {
 
 type HttpEncoder struct{}
 
-func NewHttpEncoder() *HttpEncoder {
+func New() *HttpEncoder {
 	return &HttpEncoder{}
 }
 

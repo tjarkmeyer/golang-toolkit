@@ -42,8 +42,8 @@ type KcSession struct {
 	password string
 }
 
-// CreateSession - creates gocloak session
-func CreateSession(url, clientID, username, password, realm, clientSecret string) (*KcSession, error) {
+// NewSession - creates gocloak session
+func NewSession(url, clientID, username, password, realm, clientSecret string) (*KcSession, error) {
 	s, err := session.NewSession(clientID, clientSecret, username, password, realm, url)
 	if err != nil {
 		return nil, err
@@ -58,8 +58,8 @@ func CreateSession(url, clientID, username, password, realm, clientSecret string
 	}, nil
 }
 
-// CreateClient - creates gocloak client
-func CreateClient(url, base, id, realm, secret string) *KcClient {
+// NewClient - creates gocloak client
+func NewClient(url, base, id, realm, secret string) *KcClient {
 	return &KcClient{
 		c: gocloak.NewClient(
 			url,

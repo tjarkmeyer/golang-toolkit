@@ -7,9 +7,9 @@ import (
 )
 
 type Pagination struct {
-	PerPage     int         `json:"perPage,omitempty;query:limit"`
-	CurrentPage int         `json:"currentPage,omitempty;query:page"`
-	Sort        string      `json:"sort,omitempty;query:sort"`
+	PerPage     int         `json:"perPage,omitempty"`
+	CurrentPage int         `json:"currentPage,omitempty"`
+	Sort        string      `json:"sort,omitempty"`
 	Total       int64       `json:"total"`
 	TotalPages  int         `json:"totalPages"`
 	Data        interface{} `json:"data"`

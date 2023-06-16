@@ -17,8 +17,8 @@ type Definition struct {
 	Name       string
 }
 
-// NewRestController - returns new rest definition
-func NewRestController() *Definitions {
+// NewController - returns new rest definition controller
+func NewController() *Definitions {
 	return &Definitions{}
 }
 
@@ -27,8 +27,8 @@ func (r *Definitions) AddController(controller *Definition) {
 	r.Controllers = append(r.Controllers, controller)
 }
 
-// CreateRestController - createa a new rest controller
-func (r *Definitions) CreateRestController() *chi.Mux {
+// CreateController - createa a new rest controller
+func (r *Definitions) CreateController() *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Route("/v1", func(route chi.Router) {
@@ -40,8 +40,8 @@ func (r *Definitions) CreateRestController() *chi.Mux {
 	return router
 }
 
-// CreateRestControllerByName - createa a new rest controller
-func (r *Definitions) CreateRestControllerByName() *chi.Mux {
+// CreateControllerByName - createa a new rest controller
+func (r *Definitions) CreateControllerByName() *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Route("/v1", func(route chi.Router) {
