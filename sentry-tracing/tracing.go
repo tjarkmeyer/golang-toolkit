@@ -5,7 +5,7 @@ import (
 	sentryhttp "github.com/getsentry/sentry-go/http"
 )
 
-func InitSentry(dsn, env, serverName string) (*sentryhttp.Handler, error) {
+func New(dsn, env, serverName string) (*sentryhttp.Handler, error) {
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              dsn,
 		Environment:      env,

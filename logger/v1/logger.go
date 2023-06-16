@@ -22,7 +22,7 @@ type LogConfig struct {
 	}
 }
 
-func NewLogger(appVersion string) *zap.Logger {
+func New(appVersion string) *zap.Logger {
 	var ownZapConfig LogConfig
 
 	config.Process(&ownZapConfig)

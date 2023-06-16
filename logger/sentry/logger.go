@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func InitLogger(env, dsn string) *zap.Logger {
+func New(env, dsn string) *zap.Logger {
 	encoder := zapEncoder(env)
 	logLevel := zapLogLevel(env)
 	logWriter := zapLogWriter()

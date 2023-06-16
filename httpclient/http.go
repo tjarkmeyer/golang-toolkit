@@ -25,19 +25,19 @@ type Client struct {
 	fallback         func(context.Context, error) error
 }
 
-func NewCustomHTTPClient(ctx context.Context, timeout time.Duration, method string, operationName string, baseURL string, app string, logger *zap.Logger) *Client {
+func New(ctx context.Context, timeout time.Duration, method string, operationName string, baseURL string, app string, logger *zap.Logger) *Client {
 	return &Client{
 		ctx:        ctx,
 		method:     method,
 		name:       operationName,
 		baseURL:    baseURL,
 		app:        app,
-		HTTPClient: GetHTTPClient(timeout),
+		HTTPClient: Get(timeout),
 		logger:     logger,
 	}
 }
 
-func GetHTTPClient(timeout time.Duration) HTTPClient {
+func Get(timeout time.Duration) HTTPClient {
 	client := &http.Client{
 		Timeout: timeout,
 		Transport: &http.Transport{
