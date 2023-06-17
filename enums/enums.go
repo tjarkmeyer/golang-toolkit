@@ -7,16 +7,6 @@ const (
 	PRODUCTION  Environment = "PRODUCTION"
 )
 
-func (env Environment) String() string {
-	environments := [...]string{"DEVELOPMENT", "PRODUCTION"}
-
-	value := string(env)
-
-	for _, v := range environments {
-		if v == value {
-			return value
-		}
-	}
-
-	return ""
+func (e Environment) String() string {
+	return string(e)
 }

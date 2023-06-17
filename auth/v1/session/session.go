@@ -12,8 +12,7 @@ import (
 // CallOption configures a Session
 type CallOption func(*goCloakSession) error
 
-// PrematureRefreshThresholdOption sets the threshold for a premature token
-// refresh
+// PrematureRefreshThresholdOption sets the threshold for a premature token refresh
 func PrematureRefreshThresholdOption(accessToken, refreshToken time.Duration) CallOption {
 	return func(gcs *goCloakSession) error {
 		gcs.prematureRefreshTokenRefreshThreshold = int(refreshToken.Seconds())
@@ -22,7 +21,7 @@ func PrematureRefreshThresholdOption(accessToken, refreshToken time.Duration) Ca
 	}
 }
 
-func SetGocloak(gc gocloak.GoCloak) CallOption {
+func SetGoCloak(gc gocloak.GoCloak) CallOption {
 	return func(gcs *goCloakSession) error {
 		gcs.gocloak = gc
 		return nil
@@ -42,7 +41,7 @@ type goCloakSession struct {
 	prematureAccessTokenRefreshThreshold  int
 }
 
-// NewSession returns a new instance of a gocloak Session
+// NewSession - new instance of a gocloak Session
 func NewSession(clientID, clientSecret, username, password, realm, uri string, calloptions ...CallOption) (GoCloakSession, error) {
 	session := &goCloakSession{
 		clientID:                              clientID,

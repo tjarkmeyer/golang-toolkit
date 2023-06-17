@@ -1,55 +1,67 @@
 package logger
 
 import (
-	"encoding/json"
+	"os"
 
-	"github.com/tjarkmeyer/golang-toolkit/config/v1"
+	"github.com/TheZeroSlave/zapsentry"
+	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-type LogConfig struct {
-	Level            string      `json:"level" default:"debug" envconfig:"LOG_LEVEL"`
-	Encoding         string      `json:"encoding" default:"json" envconfig:"LOG_ENCODING"`
-	OutputPaths      []string    `json:"outputPaths" default:"stdout" envconfig:"LOG_OUTPUT_PATHS"`
-	ErrorOutputPaths []string    `json:"errorOutputPaths" default:"stderr" envconfig:"LOG_ERROR_OUTPUT_PATHS"`
-	InitialFields    interface{} `json:"initialFields" envconfig:"LOG_INTIAL_FIELDS"`
-	EncoderConfig    struct {
-		MessageKey   string `json:"messageKey" default:"message" envconfig:"LOG_MESSAGE_KEY"`
-		LevelKey     string `json:"levelKey" default:"level" envconfig:"LOG_LEVEL_KEY"`
-		LevelEncoder string `json:"levelEncoder" default:"lowercase" envconfig:"LOG_LEVEL_ENCODER"`
-		TimeKey      string `json:"timeKey" default:"timestamp" envconfig:"LOG_TIME_KEY"`
+func New(env, dsn string) *zap.Logger {
+	encoder := zapEncoder(env)
+	logLevel := zapLogLevel(env)
+	logWriter := zapLogWriter()
+	core := zapcore.NewCore(encoder, logWriter, logLevel)
+	logger := zap.New(core, zap.AddCaller())
+	return attachSentryLogger(logger, newSentryClientFromDSN(dsn, env))
+}
+
+func zapEncoder(env string) zapcore.Encoder {
+	var encoderConfig zapcore.EncoderConfig
+
+	if env == "production" {
+		encoderConfig = zap.NewProductionEncoderConfig()
+	} else {
+		encoderConfig = zap.NewDevelopmentEncoderConfig()
+	}
+
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	return zapcore.NewJSONEncoder(encoderConfig)
+}
+
+func zapLogWriter() zapcore.WriteSyncer {
+	return zapcore.AddSync(os.Stdout)
+}
+
+func zapLogLevel(env string) zapcore.LevelEnabler {
+	if env == "production" {
+		return zapcore.ErrorLevel
+	} else {
+		return zapcore.DebugLevel
 	}
 }
 
-func New(appVersion string) *zap.Logger {
-	var ownZapConfig LogConfig
-
-	config.Process(&ownZapConfig)
-	zap := convertOwnConfigToZapConfig(ownZapConfig)
-	zap.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	zap.InitialFields = map[string]interface{}{
-		"version": appVersion,
+func attachSentryLogger(log *zap.Logger, clientFactory zapsentry.SentryClientFactory) *zap.Logger {
+	cfg := zapsentry.Configuration{
+		Level: zapcore.ErrorLevel,
 	}
+	core, err := zapsentry.NewCore(cfg, clientFactory)
 
-	logger, err := zap.Build()
 	if err != nil {
 		panic(err)
 	}
 
-	return logger
+	return zapsentry.AttachCoreToLogger(core, log)
 }
 
-func convertOwnConfigToZapConfig(config LogConfig) zap.Config {
-	rawConfig, err := json.Marshal(config)
-	if err != nil {
-		panic(err)
+func newSentryClientFromDSN(DSN, env string) zapsentry.SentryClientFactory {
+	return func() (*sentry.Client, error) {
+		return sentry.NewClient(sentry.ClientOptions{
+			Dsn:         DSN,
+			Environment: env,
+		})
 	}
-
-	var zapConfig zap.Config
-	if err := json.Unmarshal(rawConfig, &zapConfig); err != nil {
-		panic(err)
-	}
-
-	return zapConfig
 }
