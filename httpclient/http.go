@@ -25,7 +25,7 @@ type Client struct {
 	fallback         func(context.Context, error) error
 }
 
-func New(ctx context.Context, timeout time.Duration, method string, operationName string, baseURL string, app string, logger *zap.Logger) *Client {
+func New(ctx context.Context, timeout time.Duration, method, operationName, baseURL, app string, logger *zap.Logger) *Client {
 	return &Client{
 		ctx:        ctx,
 		method:     method,
@@ -38,72 +38,69 @@ func New(ctx context.Context, timeout time.Duration, method string, operationNam
 }
 
 func Get(timeout time.Duration) HTTPClient {
-	client := &http.Client{
+	return &http.Client{
 		Timeout: timeout,
 		Transport: &http.Transport{
 			MaxIdleConns:        60,
 			MaxIdleConnsPerHost: 60,
 		},
 	}
-
-	return client
 }
 
-func (client *Client) WithHTTPMethod(method string) *Client {
-	client.method = method
-	return client
+func (c *Client) WithHTTPMethod(method string) *Client {
+	c.method = method
+	return c
 }
 
-func (client *Client) WithHTTClient(httpClient HTTPClient) *Client {
-	client.HTTPClient = httpClient
-	return client
+func (c *Client) WithHTTClient(httpClient HTTPClient) *Client {
+	c.HTTPClient = httpClient
+	return c
 }
 
-func (client *Client) WithParams(params map[string]string) *Client {
-	client.params = params
-	return client
+func (c *Client) WithParams(params map[string]string) *Client {
+	c.params = params
+	return c
 }
 
-// WithAdditionalParams adds more query parameters of the same kind
-func (client *Client) WithAdditionalParams(params map[string][]string) *Client {
-	client.additionalParams = params
-	return client
+// WithAdditionalParams - adds more query parameters of the same kind
+func (c *Client) WithAdditionalParams(params map[string][]string) *Client {
+	c.additionalParams = params
+	return c
 }
 
-func (client *Client) WithBody(body io.Reader) *Client {
-	client.body = body
-	return client
+func (ccient *Client) WithBody(body io.Reader) *Client {
+	ccient.body = body
+	return ccient
 }
 
-func (client *Client) WithHeaderParams(headerParams map[string]string) *Client {
-	client.headerParams = headerParams
-	return client
+func (c *Client) WithHeaderParams(headerParams map[string]string) *Client {
+	c.headerParams = headerParams
+	return c
 }
 
-func (client *Client) WithFallback(fallback func(context.Context, error) error) *Client {
-	client.fallback = fallback
-	return client
+func (c *Client) WithFallback(fallback func(context.Context, error) error) *Client {
+	c.fallback = fallback
+	return c
 }
 
-func (client *Client) Call() (*http.Response, string, error) {
-	client.logger = client.logger.With(zap.String("http_method", client.method), zap.String("base_url", client.baseURL))
+func (c *Client) Call() (*http.Response, string, error) {
+	c.logger.With(zap.String("http_method", c.method), zap.String("base_url", c.baseURL))
+	c.logger.Info("[START] setting up client call")
 
-	client.logger.Info("[START] setting up client call")
-
-	req, err := http.NewRequest(client.method, client.baseURL, client.body)
+	req, err := http.NewRequest(c.method, c.baseURL, c.body)
 	req.Close = true
 	if err != nil {
-		client.logger.Error("[ERROR] creation the request")
+		c.logger.Error("[ERROR] while creating the request")
 		return nil, "", err
 	}
 
 	query := req.URL.Query()
-	for key, value := range client.params {
+	for key, value := range c.params {
 		query.Add(key, value)
 	}
 
-	if client.additionalParams != nil {
-		for key, additonalValueIn := range client.additionalParams {
+	if c.additionalParams != nil {
+		for key, additonalValueIn := range c.additionalParams {
 			for _, value := range additonalValueIn {
 				query.Add(key, value)
 			}
@@ -112,21 +109,21 @@ func (client *Client) Call() (*http.Response, string, error) {
 
 	req.URL.RawQuery = query.Encode()
 
-	for key, value := range client.headerParams {
+	for key, value := range c.headerParams {
 		req.Header.Add(key, value)
 	}
 
-	client.logger = client.logger.With(
+	c.logger.With(
 		zap.String("URL", req.URL.String()),
-		zap.Any("headers", client.headerParams),
-		zap.Any("params", client.params),
-		zap.Any("body", client.body),
+		zap.Any("headers", c.headerParams),
+		zap.Any("params", c.params),
+		zap.Any("body", c.body),
 	)
 
-	response, err := client.call(req, client.fallback)
+	response, err := c.call(req)
 
 	if err != nil {
-		client.logger.Error("[ERROR] executing request", zap.Error(err))
+		c.logger.Error("[ERROR] executing request", zap.Error(err))
 		return nil, "", err
 	}
 
@@ -134,16 +131,16 @@ func (client *Client) Call() (*http.Response, string, error) {
 
 	if response != nil {
 		reader, err := responseBodyReader(response)
-		defer closeResponseBodyReader(reader, client.logger)
+		defer closeResponseBodyReader(reader, c.logger)
 
 		if err != nil {
-			client.logger.Error("[ERROR] reading response body", zap.Error(err))
+			c.logger.Error("[ERROR] reading response body", zap.Error(err))
 			return nil, "", err
 		}
 
 		body, err := io.ReadAll(reader)
 		if err != nil {
-			client.logger.Error("[ERROR] reading response body", zap.Error(err))
+			c.logger.Error("[ERROR] reading response body", zap.Error(err))
 			return nil, "", err
 		} else {
 			content = string(body)
@@ -153,17 +150,17 @@ func (client *Client) Call() (*http.Response, string, error) {
 	return response, content, nil
 }
 
-func (client *Client) call(req *http.Request, fallback func(context.Context, error) error) (*http.Response, error) {
+func (c *Client) call(req *http.Request) (*http.Response, error) {
 	response := make(chan *http.Response, 1)
 
-	errs := gobreak.Do(client.ctx, client.name, func(context.Context) error {
-		resp, err := client.HTTPClient.Do(req)
+	errs := gobreak.Do(c.ctx, c.name, func(context.Context) error {
+		resp, err := c.HTTPClient.Do(req)
 		if resp != nil {
 			response <- resp
 		}
 
 		return err
-	}, fallback)
+	}, c.fallback)
 
 	if errs == nil {
 		return <-response, nil
@@ -172,7 +169,7 @@ func (client *Client) call(req *http.Request, fallback func(context.Context, err
 	return nil, errs
 }
 
-// responseBodyReader resolves different content types of response bodies
+// responseBodyReader - resolves different content types of response bodies
 func responseBodyReader(res *http.Response) (io.ReadCloser, error) {
 	var reader io.ReadCloser
 	var err error

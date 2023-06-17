@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Nerzal/gocloak/v11"
@@ -303,7 +302,7 @@ func (client *KcSession) ReinviteUserById(ctx context.Context, userID string) er
 		return err
 	}
 
-	timeNow := time.Now().UTC().Unix() * 1000
+	timeNow := time.Now().UTC().UnixMilli()
 	attributes := *user.Attributes
 	attributes["invited"] = []string{strconv.FormatInt(timeNow, 10)}
 	user.Attributes = &attributes
@@ -320,7 +319,7 @@ func (client *KcSession) DeleteUser(ctx context.Context, userID string) error {
 	return client.s.GetGoCloakInstance().DeleteUser(ctx, token.AccessToken, client.realm, userID)
 }
 
-// UpdateUserProperties updates a user
+// UpdateUserProperties - updates a user
 func (client *KcSession) UpdateUserProperties(user *gocloak.User) error {
 	token, err := client.s.GetKeycloakAuthToken()
 	if err != nil {
@@ -422,8 +421,7 @@ func (client *KcSession) GetEvents(config KeycloakConfig, params ...gocloak.GetE
 		}
 	}
 
-	body := strings.NewReader("")
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s/admin/realms/%s/events%s", config.URL, config.Base, config.Realm, queryParams), body)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s/admin/realms/%s/events%s", config.URL, config.Base, config.Realm, queryParams), nil)
 	if err != nil {
 		return eventRep, err
 	}
@@ -440,9 +438,7 @@ func (client *KcSession) GetEvents(config KeycloakConfig, params ...gocloak.GetE
 		return eventRep, err
 	}
 
-	err = json.Unmarshal(bodyOut, &eventRep)
-
-	return eventRep, err
+	return eventRep, json.Unmarshal(bodyOut, &eventRep)
 }
 
 // GetUserFederatedIdentities - returns all federated identities (IDPs) of a user
@@ -451,7 +447,6 @@ func (client *KcSession) GetUserFederatedIdentities(ctx context.Context, userID 
 	if err != nil {
 		return []*gocloak.FederatedIdentityRepresentation{}, err
 	}
-
 	return client.s.GetGoCloakInstance().GetUserFederatedIdentities(ctx, token.AccessToken, client.realm, userID)
 }
 

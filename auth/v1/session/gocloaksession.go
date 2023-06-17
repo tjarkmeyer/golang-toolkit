@@ -6,7 +6,7 @@ import (
 	"github.com/Nerzal/gocloak/v11"
 )
 
-// GoCloakSession holds all callable methods
+// GoCloakSession - the gocloak session
 type GoCloakSession interface {
 	// GetKeycloakAuthToken returns a JWT object, containing the AccessToken and more
 	GetKeycloakAuthToken() (*gocloak.JWT, error)
